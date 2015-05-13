@@ -17,12 +17,20 @@ sealed trait MyList[+A] {
   }
 
   // Normal
-  def foldLeft[B](z: B)(f: (B, A) => B): B = ???
+  def foldLeft[B](z: B)(f: (B, A) => B): B = {
+    @tailrec
+    def go(l: MyList[A], z: B, f: (B, A) => B): B = l match {
+      case MyNil        => z
+      case MyCons(h, t) => go(t, f(z, h), f)
+    }
+    go(this, z, f)
+  }
 
   // 難易度選択制
   // Normal: 条件 - 特にありません、気の向くままに実装してください。
   // Hard:   条件 - foldLeftを使って実装してください。
-  def foldRight[B](z: B)(f: (A, B) => B): B = ???
+  def foldRight[B](z: B)(f: (A, B) => B): B =
+    foldLeft(identity[B] _)((bb, a) => b => bb(f(a, b)))(z)
 
   // Normal
   // scalastyle:off
