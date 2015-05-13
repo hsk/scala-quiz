@@ -34,15 +34,23 @@ sealed trait MyList[+A] {
 
   // Normal
   // scalastyle:off
-  def ::[B >: A](b: B): MyList[B] = ???
+  def ::[B >: A](b: B): MyList[B] = MyCons(b, this)
   // scalastyle:on
 
   // Normal
-  def reverse: MyList[A] = ???
+  def reverse: MyList[A] = {
+    @tailrec
+    def go(l1: MyList[A], l2: MyList[A]): MyList[A] = l1 match {
+      case MyNil        => l2
+      case MyCons(h, t) => go(t, h :: l2)
+    }
+    go(this, MyNil)
+  }
 
   // Normal
   // scalastyle:off
-  def ++[B >: A](b: MyList[B]): MyList[B] = ???
+  def ++[B >: A](b: MyList[B]): MyList[B] =
+    this.foldRight(b)((h, t) => h :: t)
   // scalastyle:on
 
   // Normal
