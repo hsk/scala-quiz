@@ -54,17 +54,20 @@ sealed trait MyList[+A] {
   // scalastyle:on
 
   // Normal
-  def map[B](f: A => B): MyList[B] = ???
+  def map[B](f: A => B): MyList[B] =
+    flatMap(a => MyCons(f(a), MyNil))
 
   // Normal
-  def flatMap[B](f: A => MyList[B]): MyList[B] = ???
+  def flatMap[B](f: A => MyList[B]): MyList[B] =
+    foldRight(MyNil: MyList[B])((a, bs) => f(a) ++ bs)
 
   // Normal
-  def filter(f: A => Boolean): MyList[A] = ???
+  def filter(f: A => Boolean): MyList[A] =
+    foldRight(MyNil: MyList[A])((a, as) => if (f(a)) a :: as else as)
 
   // Normal: 条件 - filterと同様の実装でも構いません。
   // Hard:   条件 - 中間リストを生成しないように実装してください。
-  def withFilter(f: A => Boolean): MyList[A] = ???
+  def withFilter(f: A => Boolean): MyList[A] = filter(f)
 
   // Normal
   def find(f: A => Boolean): MyOption[A] = ???
