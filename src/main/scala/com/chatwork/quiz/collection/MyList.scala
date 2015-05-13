@@ -1,6 +1,6 @@
 package com.chatwork.quiz.collection
 
-import com.chatwork.quiz.MyOption
+import com.chatwork.quiz.{ MySome, MyNone, MyOption }
 
 import scala.annotation.tailrec
 
@@ -70,10 +70,19 @@ sealed trait MyList[+A] {
   def withFilter(f: A => Boolean): MyList[A] = filter(f)
 
   // Normal
-  def find(f: A => Boolean): MyOption[A] = ???
+  def find(f: A => Boolean): MyOption[A] = filter(f) match {
+    case MyNil        => MyNone
+    case MyCons(h, _) => MySome(h)
+  }
 
   // Normal
-  def startsWith[B >: A](prefix: MyList[B]): Boolean = ???
+  def startsWith[B >: A](prefix: MyList[B]): Boolean = (this, prefix) match {
+    case (MyNil, _) => false
+    case (_, MyNil) => true
+    case (MyCons(h1, t1), MyCons(h2, t2)) =>
+      if (h1 == h2) t1.startsWith(t2)
+      else false
+  }
 
 }
 
