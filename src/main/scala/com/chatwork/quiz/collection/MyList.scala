@@ -1,90 +1,111 @@
 package com.chatwork.quiz.collection
 
-import com.chatwork.quiz.{ MySome, MyNone, MyOption }
-
-import scala.annotation.tailrec
+import com.chatwork.quiz.MyOption
+import com.chatwork.quiz.MyNone
 
 sealed trait MyList[+A] {
 
   // Easy
   def length: Int = {
-    @tailrec
-    def go(n: Int, l: MyList[A]): Int = l match {
-      case MyNil        => n
-      case MyCons(h, t) => go(n + 1, t)
+    this match {
+      case MyNil         => 0
+      case MyCons(x, xs) => 1 + xs.length
     }
-    go(0, this)
   }
 
   // Normal
   def foldLeft[B](z: B)(f: (B, A) => B): B = {
-    @tailrec
-    def go(l: MyList[A], z: B, f: (B, A) => B): B = l match {
-      case MyNil        => z
-      case MyCons(h, t) => go(t, f(z, h), f)
+    this match {
+      case MyNil         => z
+      case MyCons(x, xs) => xs.foldLeft(f(z, x))(f)
     }
-    go(this, z, f)
   }
 
   // 難易度選択制
   // Normal: 条件 - 特にありません、気の向くままに実装してください。
   // Hard:   条件 - foldLeftを使って実装してください。
-  def foldRight[B](z: B)(f: (A, B) => B): B =
-    foldLeft(identity[B] _)((bb, a) => b => bb(f(a, b)))(z)
+  def foldRight[B](z: B)(f: (A, B) => B): B = {
+    this match {
+      case MyNil         => z
+      case MyCons(x, xs) => f(x, xs.foldRight(z)(f))
+    }
+  }
 
   // Normal
   // scalastyle:off
-  def ::[B >: A](b: B): MyList[B] = MyCons(b, this)
+  def ::[B >: A](b: B): MyList[B] = {
+    MyCons(b, this)
+  }
   // scalastyle:on
 
   // Normal
   def reverse: MyList[A] = {
-    @tailrec
-    def go(l1: MyList[A], l2: MyList[A]): MyList[A] = l1 match {
-      case MyNil        => l2
-      case MyCons(h, t) => go(t, h :: l2)
+    this match {
+      case MyNil         => this
+      case MyCons(x, xs) => xs.reverse ++ MyCons(x, MyNil)
     }
-    go(this, MyNil)
   }
 
   // Normal
   // scalastyle:off
-  def ++[B >: A](b: MyList[B]): MyList[B] =
-    this.foldRight(b)((h, t) => h :: t)
+  def ++[B >: A](b: MyList[B]): MyList[B] = {
+    this match {
+      case MyNil         => b
+      case MyCons(x, xs) => MyCons(x, xs ++ b)
+    }
+  }
   // scalastyle:on
 
   // Normal
-  def map[B](f: A => B): MyList[B] =
-    flatMap(a => MyCons(f(a), MyNil))
-
-  // Normal
-  def flatMap[B](f: A => MyList[B]): MyList[B] =
-    foldRight(MyNil: MyList[B])((a, bs) => f(a) ++ bs)
-
-  // Normal
-  def filter(f: A => Boolean): MyList[A] =
-    foldRight(MyNil: MyList[A])((a, as) => if (f(a)) a :: as else as)
-
-  // Normal: 条件 - filterと同様の実装でも構いません。
-  // Hard:   条件 - 中間リストを生成しないように実装してください。
-  def withFilter(f: A => Boolean): MyList[A] = filter(f)
-
-  // Normal
-  def find(f: A => Boolean): MyOption[A] = filter(f) match {
-    case MyNil        => MyNone
-    case MyCons(h, _) => MySome(h)
+  def map[B](f: A => B): MyList[B] = {
+    this match {
+      case MyNil         => MyNil
+      case MyCons(x, xs) => f(x) :: xs.map(f)
+    }
   }
 
   // Normal
-  def startsWith[B >: A](prefix: MyList[B]): Boolean = (this, prefix) match {
-    case (MyNil, _) => false
-    case (_, MyNil) => true
-    case (MyCons(h1, t1), MyCons(h2, t2)) =>
-      if (h1 == h2) {
-        t1.startsWith(t2)
-      } else {
-        false
-      }
+  def flatMap[B](f: A => MyList[B]): MyList[B] = {
+    this match {
+      case MyNil         => MyNil
+      case MyCons(x, xs) => f(x) ++ xs.flatMap(f)
+    }
+  }
+
+  // Normal
+  def filter(f: A => Boolean): MyList[A] = {
+    this match {
+      case MyNil                   => this
+      case MyCons(x, xs) if (f(x)) => MyCons(x, xs.filter(f))
+      case MyCons(x, xs)           => xs.filter(f)
+    }
+  }
+
+  // Normal: 条件 - filterと同様の実装でも構いません。
+  // Hard:   条件 - 中間リストを生成しないように実装してください。
+  def withFilter(f: A => Boolean): MyList[A] = {
+    this match {
+      case MyNil                   => this
+      case MyCons(x, xs) if (f(x)) => MyCons(x, xs.filter(f))
+      case MyCons(x, xs)           => xs.filter(f)
+    }
+  }
+
+  // Normal
+  def find(f: A => Boolean): MyOption[A] = {
+    this match {
+      case MyNil                   => MyNone
+      case MyCons(x, xs) if (f(x)) => MyOption(x)
+      case MyCons(x, xs)           => xs.find(f)
+    }
+  }
+
+  // Normal
+  def startsWith[B >: A](prefix: MyList[B]): Boolean = {
+    this match {
+      case MyCons(x, _) if (prefix == x) => true
+      case _                             => false
+    }
   }
 
 }
@@ -99,11 +120,14 @@ object MyList {
   def empty[A]: MyList[A] = MyNil
 
   // Normal
-  def apply[A](as: A*): MyList[A] =
-    if (as.size == 0) {
-      MyNil
-    } else {
-      MyCons(as.head, apply(as.tail: _*))
+  def apply[A](as: A*): MyList[A] = {
+    def toMyList(as: List[A]): MyList[A] = {
+      as match {
+        case List()  => MyNil
+        case x :: xs => MyCons(x, toMyList(xs))
+      }
     }
+    toMyList(as.toList)
+  }
 
 }

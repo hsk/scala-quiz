@@ -54,17 +54,39 @@ sealed trait Node {
  */
 case class Branch(left: Node, value: Int, right: Node) extends Node {
 
-  val size: Int = ???
+  val size: Int = {
+    1 +
+      (if (left == null) 0 else left.size) +
+      (if (right == null) 0 else right.size)
+  }
 
-  val sum: Int = ???
+  val sum: Int = {
+    value +
+      (if (left == null) 0 else left.sum) +
+      (if (right == null) 0 else right.sum)
+  }
 
-  val avg: Double = ???
+  val avg: Double = {
+    sum * 1.0 / size
+  }
+  val max: Int = {
+    scala.math.max(
+      if (left == null) value else scala.math.max(left.max, value),
+      if (right == null) value else right.max)
+  }
 
-  val max: Int = ???
+  val min: Int = {
+    scala.math.min(
+      if (left == null) value else scala.math.min(left.min, value),
+      if (right == null) value else right.min)
+  }
 
-  val min: Int = ???
-
-  def find(value: Int): Option[Node] = ???
+  def find(value: Int): Option[Node] = {
+    val v = (this.value - value)
+    if (v == 0) Some(this)
+    else if (v > 0) left.find(value)
+    else right.find(value)
+  }
 
 }
 
@@ -75,17 +97,19 @@ case class Branch(left: Node, value: Int, right: Node) extends Node {
  */
 case class Leaf(value: Int) extends Node {
 
-  val size: Int = ???
+  val size: Int = 1
 
-  val sum: Int = ???
+  val sum: Int = value
 
-  val avg: Double = ???
+  val avg: Double = value
 
-  val max: Int = ???
+  val max: Int = value
 
-  val min: Int = ???
+  val min: Int = value
 
-  def find(value: Int): Option[Node] = ???
+  def find(value: Int): Option[Node] = {
+    if (this.value == value) Some(this) else None
+  }
 
 }
 
@@ -121,7 +145,25 @@ object BTree {
    * @param values ノードに格納する値の集合
    * @return [[BTree]]
    */
-  def apply(values: List[Int]): BTree = ???
+  def apply(values: List[Int]): BTree = {
+    def insertNode(node: Node, value: Int): Node = {
+      node match {
+        case null => Leaf(value)
+        case Leaf(n) =>
+          if (value < n) Branch(Leaf(value), n, null)
+          else Branch(Leaf(n), value, null)
+        case Branch(l, n, null) if (value > n) => Branch(l, n, Leaf(value))
+        case Branch(l, n, r) =>
+          if (value < n) Branch(insertNode(l, value), n, r)
+          else Branch(l, n, insertNode(r, value))
+      }
+    }
+
+    BTree(
+      values.foldLeft(null: Node) {
+        case (node, v) => insertNode(node, v)
+      })
+  }
 
 }
 
