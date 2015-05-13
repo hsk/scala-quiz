@@ -2,10 +2,19 @@ package com.chatwork.quiz.collection
 
 import com.chatwork.quiz.MyOption
 
+import scala.annotation.tailrec
+
 sealed trait MyList[+A] {
 
   // Easy
-  def length: Int = ???
+  def length: Int = {
+    @tailrec
+    def go(n: Int, l: MyList[A]): Int = l match {
+      case MyNil        => n
+      case MyCons(h, t) => go(n + 1, t)
+    }
+    go(0, this)
+  }
 
   // Normal
   def foldLeft[B](z: B)(f: (B, A) => B): B = ???
