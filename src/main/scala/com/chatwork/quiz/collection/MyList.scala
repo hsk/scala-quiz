@@ -80,8 +80,11 @@ sealed trait MyList[+A] {
     case (MyNil, _) => false
     case (_, MyNil) => true
     case (MyCons(h1, t1), MyCons(h2, t2)) =>
-      if (h1 == h2) t1.startsWith(t2)
-      else false
+      if (h1 == h2) {
+        t1.startsWith(t2)
+      } else {
+        false
+      }
   }
 
 }
@@ -97,7 +100,10 @@ object MyList {
 
   // Normal
   def apply[A](as: A*): MyList[A] =
-    if (as.size == 0) MyNil
-    else MyCons(as.head, apply(as.tail: _*))
+    if (as.size == 0) {
+      MyNil
+    } else {
+      MyCons(as.head, apply(as.tail: _*))
+    }
 
 }
